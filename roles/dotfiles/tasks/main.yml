@@ -90,6 +90,15 @@
   tags:
     - dotfiles
 
+- name: Checkout OS dotfiles working tree
+  ansible.builtin.shell:
+    cmd: git --work-tree="{{ user_home }}/.dotfiles-os" checkout HEAD -- .
+  become: "{{ ansible_os_family != 'Darwin' }}"
+  become_user: "{{ user }}"
+  changed_when: true
+  tags:
+    - dotfiles
+
 - name: Remove existing files/dirs and symlink OS dotfiles
   ansible.builtin.shell: |
     cd "{{ user_home }}"
