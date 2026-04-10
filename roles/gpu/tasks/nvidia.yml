@@ -29,20 +29,6 @@
     replace: "MODULES=({{ nvidia_initramfs_modules | join(' ') }})"
   notify: Regenerate initramfs
 
-- name: Get current GRUB kernel parameters
-  ansible.builtin.slurp:
-    src: /etc/default/grub
-  register: grub_content
-
-- name: Add NVIDIA kernel parameters to GRUB
-  ansible.builtin.lineinfile:
-    path: /etc/default/grub
-    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
-    line: >-
-      GRUB_CMDLINE_LINUX_DEFAULT="quiet {{ nvidia_kernel_params | join(' ') }}"
-    mode: '0644'
-  notify: Regenerate GRUB config
-
 - name: DKMS known issue — kernel 6.19+ compatibility warning
   ansible.builtin.debug:
     msg: >

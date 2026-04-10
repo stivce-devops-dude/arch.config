@@ -1,0 +1,17 @@
+---
+- name: Arch Personal Configuration
+  hosts: local
+  become: true
+  vars:
+    local_user: "{{ lookup('env', 'SUDO_USER') | default('') }}"
+
+  pre_tasks:
+    - name: Assert local_user is set
+      ansible.builtin.assert:
+        that: local_user | length > 0
+        fail_msg: "local_user is empty. Run the playbook with sudo (not as root directly), or pass -e local_user=<username>"
+
+  roles:
+    - packages-personal
+    - dotfiles
+    - zen-browser

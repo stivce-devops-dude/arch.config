@@ -41,8 +41,4 @@
     - system
     - sudo
 
-- name: Configure GRUB
-  ansible.builtin.import_tasks: update-grub.yml
-  tags:
-    - system
-    - grub
+
