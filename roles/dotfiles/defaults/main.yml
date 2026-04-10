@@ -3,7 +3,7 @@ dotfiles_shared_repo: "https://github.com/stivce-devops-dude/dotfiles.git"
 dotfiles_shared_dir: ".dotfiles"
 
 dotfiles_os_repo_map:
-  Darwin: "https://github.com/stivce-devops-dude/dotfiles-mac.git"
-  Archlinux: "https://github.com/stivce-devops-dude/dotfiles-arch.git"
+  Darwin: "https://github.com/stivce-devops-dude/mac.dotfiles.git"
+  Archlinux: "https://github.com/stivce-devops-dude/arch.dotfiles.git"
 
 dotfiles_os_dir: ".dotfiles-os"
