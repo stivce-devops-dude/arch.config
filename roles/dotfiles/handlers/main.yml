@@ -1,0 +1,14 @@
+---
+- name: Reload Hyprland
+  ansible.builtin.shell: |
+    uid=$(id -u {{ local_user }})
+    sig=$(ls /run/user/${uid}/hypr/ 2>/dev/null | head -1)
+    if [ -n "$sig" ]; then
+      XDG_RUNTIME_DIR="/run/user/${uid}" HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl reload
+    else
+      echo "Hyprland not running, skipping reload"
+    fi
+  become: true
+  become_user: "{{ local_user }}"
+  changed_when: false
+  failed_when: false

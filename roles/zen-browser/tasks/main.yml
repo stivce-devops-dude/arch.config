@@ -1,0 +1,28 @@
+---
+- name: Deploy Zen Browser policies (force-install extensions, disable auto-update)
+  ansible.builtin.copy:
+    dest: /opt/zen-browser-bin/distribution/policies.json
+    content: |
+      {
+        "policies": {
+          "DisableAppUpdate": true,
+          "ExtensionSettings": {
+            "uBlock0@raymondhill.net": {
+              "installation_mode": "force_installed",
+              "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+            },
+            "sponsorBlocker@ajay.app": {
+              "installation_mode": "force_installed",
+              "install_url": "https://addons.mozilla.org/firefox/downloads/latest/sponsorblock/latest.xpi"
+            }
+          }
+        }
+      }
+    mode: "0644"
+
+- name: Apply Zen Browser user preferences to all profiles
+  ansible.builtin.command: "/home/{{ local_user }}/.local/bin/zen-apply-prefs"
+  become: true
+  become_user: "{{ local_user }}"
+  changed_when: false
+  failed_when: false

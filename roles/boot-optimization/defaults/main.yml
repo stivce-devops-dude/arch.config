@@ -1,0 +1,7 @@
+---
+blacklist_modules:
+  - pcspkr
+  - sp5100_tco
+
+initramfs_compression: zstd
+initramfs_compression_options: "-1"

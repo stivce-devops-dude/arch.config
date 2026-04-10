@@ -1,0 +1,59 @@
+---
+pacman_packages:
+  # Hyprland
+  - hyprland
+  - hyprpolkitagent
+  - xdg-desktop-portal-hyprland
+  - hypridle
+  - hyprlock
+  # Wayland
+  - wl-clipboard
+  # Wallpaper
+  - awww
+  # Display manager
+  - ly
+  # Terminal
+  - kitty
+  # Audio
+  - pipewire
+  - wireplumber
+  - pipewire-pulse
+  - pipewire-alsa
+  # Bluetooth
+  - bluez
+  - bluez-utils
+  # Screenshots
+  - grim
+  - slurp
+  # Input/Media
+  - brightnessctl
+  - playerctl
+  # Shell
+  - zsh
+  # Fonts
+  - ttf-jetbrains-mono-nerd
+  - noto-fonts-emoji
+  # Polkit
+  - polkit
+  # GPU utils
+  - vulkan-icd-loader
+  # Process priority
+  - ananicy-cpp
+
+aur_packages:
+  # Screenshots
+  - hyprquickframe-git
+  # Browser
+  - zen-browser-bin
+
+systemd_services:
+  - bluetooth
+  - ananicy-cpp
+
+# ly uses a template service — enabled separately below
+ly_tty: tty2
+
+user_groups:
+  - input
+  - video
+  - seat

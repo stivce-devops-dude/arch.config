@@ -1,0 +1,29 @@
+---
+- name: Check if paru is already installed
+  ansible.builtin.stat:
+    path: /usr/bin/paru
+  register: paru_binary
+
+- name: Clone paru from AUR
+  become: true
+  become_user: "{{ local_user }}"
+  ansible.builtin.git:
+    repo: https://aur.archlinux.org/paru.git
+    dest: /tmp/paru
+    update: true
+  when: not paru_binary.stat.exists
+
+- name: Build and install paru
+  become: true
+  become_user: "{{ local_user }}"
+  ansible.builtin.command:
+    cmd: makepkg -si --noconfirm
+    chdir: /tmp/paru
+  when: not paru_binary.stat.exists
+  changed_when: true
+
+- name: Clean up paru build directory
+  ansible.builtin.file:
+    path: /tmp/paru
+    state: absent
+  when: not paru_binary.stat.exists

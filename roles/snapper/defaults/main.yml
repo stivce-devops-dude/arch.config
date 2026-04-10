@@ -1,0 +1,6 @@
+---
+snapper_timeline_limit_hourly: 5
+snapper_timeline_limit_daily: 7
+snapper_timeline_limit_weekly: 0
+snapper_timeline_limit_monthly: 0
+snapper_timeline_limit_yearly: 0

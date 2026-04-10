@@ -1,0 +1,56 @@
+---
+- name: Install zram-generator
+  community.general.pacman:
+    name: zram-generator
+    state: present
+
+- name: Configure zram
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    content: |
+      [zram0]
+      zram-size = {{ zram_size }}
+      compression-algorithm = {{ zram_compression }}
+    mode: "0644"
+
+- name: Set sysctl tweaks
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-performance.conf
+    content: |
+      vm.swappiness={{ sysctl_swappiness }}
+      vm.vfs_cache_pressure={{ sysctl_vfs_cache_pressure }}
+    mode: "0644"
+  notify: Apply sysctl
+
+- name: Set NVMe I/O scheduler to none via udev
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/60-ioscheduler.rules
+    content: |
+      ACTION=="add|change", SUBSYSTEM=="block", KERNEL=="nvme*", ATTR{queue/scheduler}="none"
+    mode: "0644"
+  notify: Reload udev rules
+
+- name: Cap systemd journal size
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '^#?SystemMaxUse='
+    line: 'SystemMaxUse={{ journal_max_use }}'
+
+- name: Install cpupower
+  community.general.pacman:
+    name: cpupower
+    state: present
+
+- name: Set CPU governor
+  ansible.builtin.lineinfile:
+    path: /etc/default/cpupower
+    regexp: '^#?governor='
+    line: "governor='{{ cpu_governor }}'"
+    create: true
+    mode: "0644"
+
+- name: Enable cpupower service
+  ansible.builtin.systemd:
+    name: cpupower
+    enabled: true
+    state: started

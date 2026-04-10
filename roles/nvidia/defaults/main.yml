@@ -1,0 +1,19 @@
+---
+nvidia_packages:
+  - linux-cachyos-nvidia-open
+  - nvidia-utils
+  - nvidia-settings
+
+nvidia_initramfs_modules:
+  - nvidia
+  - nvidia_modeset
+  - nvidia_uvm
+  - nvidia_drm
+
+nvidia_modprobe_options:
+  - "options nvidia-drm modeset=1"
+  - "options nvidia-drm fbdev=1"
+
+nvidia_blacklist_modules:
+  - amdgpu
+  - amdxdna

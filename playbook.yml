@@ -1,0 +1,40 @@
+---
+- name: Configure Arch Linux
+  hosts: localhost
+  connection: local
+  become: true
+
+  roles:
+    - role: pacman-optimization
+      tags: [pacman]
+
+    - role: makepkg-optimization
+      tags: [makepkg]
+
+    - role: system-configuration
+      tags: [system]
+
+    - role: bootstrap-deps
+      tags: [aur]
+
+    - role: boot-optimization
+      tags: [boot]
+
+    - role: common
+      tags: [directories]
+
+    - role: packages-base
+      tags: [packages]
+
+    - role: gpu
+      tags: [gpu]
+      when: enable_nvidia | bool or enable_amd | bool
+
+    - role: packages-hyprland
+      tags: [hyprland]
+
+    - role: packages-gaming
+      tags: [gaming]
+
+    - role: dotfiles
+      tags: [dotfiles]

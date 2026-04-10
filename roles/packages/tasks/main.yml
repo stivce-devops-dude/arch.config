@@ -1,0 +1,38 @@
+---
+- name: Install packages
+  community.general.pacman:
+    name: "{{ pacman_packages }}"
+    state: present
+
+- name: Install AUR packages
+  become: true
+  become_user: "{{ local_user }}"
+  ansible.builtin.shell: |
+    if paru -Q "{{ item }}" &>/dev/null; then
+      echo "already installed"
+    else
+      paru -S --noconfirm --needed "{{ item }}"
+      echo "installed"
+    fi
+  loop: "{{ aur_packages }}"
+  register: aur_result
+  changed_when: "'installed' in aur_result.stdout"
+
+- name: Add user to groups
+  ansible.builtin.user:
+    name: "{{ local_user }}"
+    groups: "{{ user_groups }}"
+    append: true
+
+- name: Enable systemd services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: "{{ systemd_services }}"
+
+- name: Enable ly display manager on correct tty
+  ansible.builtin.systemd:
+    name: "ly@{{ ly_tty }}"
+    enabled: true
+    state: started

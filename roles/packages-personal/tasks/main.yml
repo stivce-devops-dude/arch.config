@@ -1,0 +1,47 @@
+---
+- name: Gather user UID for systemd user services
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ local_user }}"
+
+- name: Install personal pacman packages
+  community.general.pacman:
+    name: "{{ pacman_packages_personal }}"
+    state: present
+
+- name: Install personal AUR packages
+  become: true
+  become_user: "{{ local_user }}"
+  ansible.builtin.shell: |
+    if paru -Q "{{ item }}" &>/dev/null; then
+      echo "already installed"
+    else
+      paru -S --noconfirm --needed "{{ item }}"
+      echo "installed"
+    fi
+  loop: "{{ aur_packages_personal }}"
+  register: aur_personal_result
+  changed_when: "'installed' in aur_personal_result.stdout"
+
+- name: Enable elephant user service
+  ansible.builtin.shell: |
+    if ! systemctl --user --quiet is-enabled elephant 2>/dev/null; then
+      elephant service enable
+      echo "enabled"
+    fi
+  become: true
+  become_user: "{{ local_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[local_user][1] }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts.getent_passwd[local_user][1] }}/bus"
+  register: _elephant_enable
+  changed_when: "'enabled' in _elephant_enable.stdout"
+
+- name: Start elephant user service
+  ansible.builtin.shell: systemctl --user daemon-reload && systemctl --user start elephant
+  become: true
+  become_user: "{{ local_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[local_user][1] }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts.getent_passwd[local_user][1] }}/bus"
+  changed_when: false

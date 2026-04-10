@@ -1,0 +1,16 @@
+---
+pacman_packages_personal:
+  # Editor
+  - neovim
+  # File manager
+  - dolphin
+
+aur_packages_personal:
+  # Launcher
+  - walker-git
+  - elephant-all-bin
+  # Fonts
+  # otf-apple-sf-pro is excluded — AUR source URL breaks frequently (Apple CDN), install manually
+  - ttf-apple-emoji
+  # Theming
+  - matugen-bin

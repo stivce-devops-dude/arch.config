@@ -1,0 +1,58 @@
+---
+- name: Install NVIDIA drivers
+  community.general.pacman:
+    name: "{{ nvidia_packages }}"
+    state: present
+  notify: Rebuild initramfs
+
+- name: Configure NVIDIA modprobe options
+  ansible.builtin.copy:
+    content: "{{ nvidia_modprobe_options | join('\n') }}\n"
+    dest: /etc/modprobe.d/nvidia-drm.conf
+    mode: "0644"
+
+- name: Blacklist conflicting GPU modules
+  ansible.builtin.copy:
+    content: "{% for mod in nvidia_blacklist_modules %}blacklist {{ mod }}\n{% endfor %}"
+    dest: /etc/modprobe.d/blacklist-amd.conf
+    mode: "0644"
+
+- name: Add NVIDIA modules to mkinitcpio
+  # NOTE: this overwrites any existing MODULES= line. If other modules are needed,
+  # add them to nvidia_initramfs_modules in defaults/main.yml.
+  ansible.builtin.lineinfile:
+    path: /etc/mkinitcpio.conf
+    regexp: '^MODULES='
+    line: "MODULES=({{ nvidia_initramfs_modules | join(' ') }})"
+  notify: Rebuild initramfs
+
+- name: Remove kms from mkinitcpio HOOKS
+  ansible.builtin.replace:
+    path: /etc/mkinitcpio.conf
+    regexp: '\s*\bkms\b'
+    replace: ''
+  notify: Rebuild initramfs
+
+- name: Ensure pacman hooks directory exists
+  ansible.builtin.file:
+    path: /etc/pacman.d/hooks
+    state: directory
+    mode: "0755"
+
+- name: Pacman hook — rebuild initramfs on NVIDIA update
+  ansible.builtin.copy:
+    dest: /etc/pacman.d/hooks/nvidia.hook
+    content: |
+      [Trigger]
+      Operation=Install
+      Operation=Upgrade
+      Operation=Remove
+      Type=Package
+      Target=linux-cachyos-nvidia-open
+
+      [Action]
+      Description=Rebuilding initramfs after NVIDIA driver update...
+      Depends=mkinitcpio
+      When=PostTransaction
+      Exec=/usr/bin/mkinitcpio -P
+    mode: "0644"
