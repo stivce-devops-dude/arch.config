@@ -114,6 +114,8 @@
   when:
     - ansible_os_family == "Archlinux"
     - not ansible_check_mode
+    - "{{ user_home }}/.local/bin/zen-apply-prefs" is exists
   changed_when: true
+  failed_when: false
   tags:
     - dotfiles
