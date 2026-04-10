@@ -5,120 +5,102 @@
   tags:
     - dotfiles
 
-# --- Shared dotfiles ---
-- name: Check if shared dotfiles repo exists
-  ansible.builtin.stat:
-    path: "{{ user_home }}/{{ dotfiles_shared_dir }}/HEAD"
-  register: dotfiles_shared_check
-  tags:
-    - dotfiles
-
-- name: Clone shared dotfiles (bare)
-  ansible.builtin.command: >
-    git clone --bare {{ dotfiles_shared_repo }}
-    {{ user_home }}/{{ dotfiles_shared_dir }}
-  become: "{{ ansible_os_family != 'Darwin' }}"
-  become_user: "{{ user }}"
-  when: not dotfiles_shared_check.stat.exists
-  changed_when: true
-  tags:
-    - dotfiles
-
-- name: Configure shared dotfiles to hide untracked files
-  ansible.builtin.command: >
-    git --git-dir={{ user_home }}/{{ dotfiles_shared_dir }}
-    --work-tree={{ user_home }}
-    config status.showUntrackedFiles no
-  become: "{{ ansible_os_family != 'Darwin' }}"
-  become_user: "{{ user }}"
-  changed_when: false
-  tags:
-    - dotfiles
-
-- name: Pull latest shared dotfiles
-  ansible.builtin.shell: >
-    git --git-dir={{ user_home }}/{{ dotfiles_shared_dir }}
-    --work-tree={{ user_home }}
-    fetch origin main &&
-    git --git-dir={{ user_home }}/{{ dotfiles_shared_dir }}
-    --work-tree={{ user_home }}
-    reset --hard FETCH_HEAD
-  become: "{{ ansible_os_family != 'Darwin' }}"
-  become_user: "{{ user }}"
-  register: dotfiles_shared_pull
-  changed_when: "'Already up to date' not in dotfiles_shared_pull.stdout"
-  when: dotfiles_shared_check.stat.exists
-  tags:
-    - dotfiles
-
-- name: Checkout shared dotfiles
-  ansible.builtin.command: >
-    git --git-dir={{ user_home }}/{{ dotfiles_shared_dir }}
-    --work-tree={{ user_home }}
-    checkout -f
-  become: "{{ ansible_os_family != 'Darwin' }}"
-  become_user: "{{ user }}"
-  changed_when: true
-  tags:
-    - dotfiles
-
-# --- OS-specific dotfiles ---
-- name: Set OS-specific dotfiles repo
+- name: Set dotfiles repos
   ansible.builtin.set_fact:
+    dotfiles_shared_repo: "https://github.com/stivce-devops-dude/dotfiles.git"
     dotfiles_os_repo: "{{ dotfiles_os_repo_map[ansible_os_family] }}"
   tags:
     - dotfiles
 
-- name: Check if OS dotfiles repo exists
-  ansible.builtin.stat:
-    path: "{{ user_home }}/{{ dotfiles_os_dir }}/HEAD"
-  register: dotfiles_os_check
+- name: Ensure dotfiles bare repo directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.dotfiles"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: '0700'
+  become: "{{ ansible_os_family != 'Darwin' }}"
+  become_user: "{{ user }}"
   tags:
     - dotfiles
 
-- name: Clone OS dotfiles (bare)
-  ansible.builtin.command: >
-    git clone --bare {{ dotfiles_os_repo }}
-    {{ user_home }}/{{ dotfiles_os_dir }}
+- name: Clone bare dotfiles repo
+  ansible.builtin.git:
+    repo: "{{ dotfiles_shared_repo }}"
+    dest: "{{ user_home }}/.dotfiles"
+    bare: yes
+    clone: yes
+    update: yes
   become: "{{ ansible_os_family != 'Darwin' }}"
   become_user: "{{ user }}"
-  when: not dotfiles_os_check.stat.exists
-  changed_when: true
   tags:
     - dotfiles
 
-- name: Configure OS dotfiles to hide untracked files
-  ansible.builtin.command: >
-    git --git-dir={{ user_home }}/{{ dotfiles_os_dir }}
-    --work-tree={{ user_home }}
-    config status.showUntrackedFiles no
+- name: Get list of dotfiles to link
+  ansible.builtin.command:
+    cmd: git --git-dir={{ user_home }}/.dotfiles ls-tree -r --name-only HEAD
   become: "{{ ansible_os_family != 'Darwin' }}"
   become_user: "{{ user }}"
+  register: dotfiles_list
   changed_when: false
   tags:
     - dotfiles
 
-- name: Pull latest OS dotfiles
-  ansible.builtin.shell: >
-    git --git-dir={{ user_home }}/{{ dotfiles_os_dir }}
-    --work-tree={{ user_home }}
-    fetch origin main &&
-    git --git-dir={{ user_home }}/{{ dotfiles_os_dir }}
-    --work-tree={{ user_home }}
-    reset --hard FETCH_HEAD
+- name: Remove existing files/dirs and symlink dotfiles
+  ansible.builtin.shell: |
+    cd "{{ user_home }}"
+    for file in $(git --git-dir=.dotfiles ls-tree -r --name-only HEAD); do
+      target=".dotfiles/$file"
+      # Remove existing file/dir/symlink if exists
+      if [[ -e "$file" || -L "$file" ]]; then
+        rm -rf "$file"
+      fi
+      # Create parent dir if needed
+      mkdir -p "$(dirname "$file")"
+      # Symlink
+      ln -s "$target" "$file"
+    done
   become: "{{ ansible_os_family != 'Darwin' }}"
   become_user: "{{ user }}"
-  register: dotfiles_os_pull
-  changed_when: "'Already up to date' not in dotfiles_os_pull.stdout"
-  when: dotfiles_os_check.stat.exists
+  changed_when: true
   tags:
     - dotfiles
 
-- name: Checkout OS dotfiles
-  ansible.builtin.command: >
-    git --git-dir={{ user_home }}/{{ dotfiles_os_dir }}
-    --work-tree={{ user_home }}
-    checkout -f
+- name: Ensure OS dotfiles bare repo exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.dotfiles-os"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: '0700'
+  become: "{{ ansible_os_family != 'Darwin' }}"
+  become_user: "{{ user }}"
+  tags:
+    - dotfiles
+
+- name: Clone OS-specific bare dotfiles repo
+  ansible.builtin.git:
+    repo: "{{ dotfiles_os_repo }}"
+    dest: "{{ user_home }}/.dotfiles-os"
+    bare: yes
+    clone: yes
+    update: yes
+  become: "{{ ansible_os_family != 'Darwin' }}"
+  become_user: "{{ user }}"
+  tags:
+    - dotfiles
+
+- name: Remove existing files/dirs and symlink OS dotfiles
+  ansible.builtin.shell: |
+    cd "{{ user_home }}"
+    for file in $(git --git-dir=.dotfiles-os ls-tree -r --name-only HEAD); do
+      target=".dotfiles-os/$file"
+      if [[ -e "$file" || -L "$file" ]]; then
+        rm -rf "$file"
+      fi
+      mkdir -p "$(dirname "$file")"
+      ln -s "$target" "$file"
+    done
   become: "{{ ansible_os_family != 'Darwin' }}"
   become_user: "{{ user }}"
   changed_when: true
