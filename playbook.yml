@@ -4,6 +4,11 @@
   connection: local
   become: true
 
+  pre_tasks:
+    - name: Sync pacman database
+      ansible.builtin.command: pacman -Syy
+      changed_when: false
+
   roles:
     - role: pacman-optimization
       tags: [pacman]
