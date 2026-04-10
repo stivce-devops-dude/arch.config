@@ -50,7 +50,7 @@
   ansible.builtin.shell: |
     cd "{{ user_home }}"
     for file in $(git --git-dir=.dotfiles ls-tree -r --name-only HEAD); do
-      target=".dotfiles/$file"
+      target="{{ user_home }}/.dotfiles/$file"
       # Remove existing file/dir/symlink if exists
       if [[ -e "$file" || -L "$file" ]]; then
         rm -rf "$file"
@@ -94,7 +94,7 @@
   ansible.builtin.shell: |
     cd "{{ user_home }}"
     for file in $(git --git-dir=.dotfiles-os ls-tree -r --name-only HEAD); do
-      target=".dotfiles-os/$file"
+      target="{{ user_home }}/.dotfiles-os/$file"
       if [[ -e "$file" || -L "$file" ]]; then
         rm -rf "$file"
       fi
